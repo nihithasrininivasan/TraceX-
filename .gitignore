@@ -1,0 +1,55 @@
+# =========================
+# JAVA / SPRING BOOT
+# =========================
+backend/target/
+*.class
+*.jar
+*.war
+*.log
+
+# =========================
+# MAVEN / LOCAL TOOLS
+# =========================
+backend/.tools/
+.tools/
+
+# =========================
+# REACT / VITE FRONTEND
+# =========================
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+frontend/.vite/
+
+# =========================
+# ENVIRONMENT / SECRETS
+# =========================
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# =========================
+# IDE / EDITORS
+# =========================
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# =========================
+# OS GENERATED FILES
+# =========================
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# =========================
+# TEMPORARY FILES
+# =========================
+*.tmp
+*.bak
+*.swp
