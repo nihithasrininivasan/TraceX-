@@ -1,0 +1,134 @@
+### 1. Create first phishing incident
+
+POST http://localhost:8080/api/incidents̥
+Content-Type: application/json
+
+{
+    "incidentType": "PHISHING",
+    "description": "Received a suspicious phishing email",
+    "suspiciousUrl": "https://fakebank.test/login",
+    "senderEmail": "support@example.test"
+}
+
+###
+
+### 2. Get all incidents
+
+GET http://localhost:8080/api/incidents̥
+
+###
+
+### 3. Test automatic domain extraction
+
+POST http://localhost:8080/api/incidents̥̥̥̥̥
+Content-Type: application/json
+
+{
+    "incidentType": "PHISHING",
+    "description": "Received another suspicious banking email",
+    "suspiciousUrl": "https://fakebank.test/offer",
+    "senderEmail": "alert@fakebank.test"
+}
+
+###
+
+### 4. DNS Lookup - fakebank
+
+GET http://localhost:8080/api/network/dns?domain=fakebank.test̥
+
+###
+
+### 5. DNS Lookup - fakegift
+
+GET http://localhost:8080/api/network/dns?domain=fakegift.test̥
+
+###
+
+### 6. DNS Lookup - Unknown domain
+
+GET http://localhost:8080/api/network/dns?domain=unknown.test̥
+###
+
+### Test automatic domain and IP extraction
+
+POST http://localhost:8080/api/incidents̥
+Content-Type: application/json
+
+{
+    "incidentType": "PHISHING",
+    "description": "Suspicious banking website reported",
+    "suspiciousUrl": "https://fakebank.test/security",
+    "senderEmail": "alert@fakebank.test"
+}
+
+###
+
+### Report another suspicious domain
+
+POST http://localhost:8080/api/incidents̥
+Content-Type: application/json
+
+{
+    "incidentType": "PHISHING",
+    "description": "Suspicious gift voucher website",
+    "suspiciousUrl": "https://fakegift.test/reward",
+    "senderEmail": "offer@fakegift.test"
+}
+
+###
+
+### 7. Find incidents sharing the same IP
+
+GET http://localhost:8080/api/network/ip?address=192.0.2.10̥
+
+###
+
+### 8. Count incidents sharing the same IP
+
+GET http://localhost:8080/api/network/ip/count?address=192.0.2.10̥
+
+###
+
+### 9. Search an IP with no matching incidents
+
+GET http://localhost:8080/api/network/ip?address=192.0.2.99
+
+### 9. Search an IP with no matching incidents
+GET http://localhost:8080/api/network/ip?address=192.0.2.99
+
+###
+
+### 10. Test DNS lookup
+GET http://localhost:8080/api/network/dns?domain=fakebank.test̥
+### 11. TCP communication
+GET http://localhost:8080/api/network/tcp?message=Hello%20TraceRoute̥
+
+### Create Incident 1
+POST http://localhost:8080/api/incidents̥
+Content-Type: application/json
+
+{
+  "incidentType": "PHISHING",
+  "description": "Received a suspicious bank login email",
+  "suspiciousUrl": "https://fakebank.test/login",
+  "senderEmail": "support@example.test"
+}
+
+###
+
+### Create Incident 2
+POST http://localhost:8080/api/incidents̥
+Content-Type: application/json
+
+{
+  "incidentType": "PHISHING",
+  "description": "Received a suspicious gift offer email",
+  "suspiciousUrl": "https://fakegift.test/claim",
+  "senderEmail": "offers@example.test"
+}
+### Get all detected relationships
+GET http://localhost:8080/api/relationships̥
+
+
+### TraceRoute Incident Network Graph
+GET http://localhost:8080/api/network/graph̥
