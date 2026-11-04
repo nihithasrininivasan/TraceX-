@@ -1,72 +1,50 @@
-# API contract
+# Integrated API contract
 
-Base URL: `http://127.0.0.1:8080`. JSON request/response bodies. Emails are normalized to lowercase and trimmed in services. Validation checks the submitted email first; send email without surrounding whitespace. Names are trimmed. Passwords are never trimmed or returned.
+Base URL: `http://127.0.0.1:8080/api`. Frontend origin: `http://localhost:5173`.
 
-## Implemented endpoints
+## Authentication
 
-| Method | Path | Access | Success |
-| --- | --- | --- | --- |
-| POST | `/api/auth/register` | Public | 201 user |
-| POST | `/api/auth/login` | Public | 200 user |
-| GET | `/api/users/me` | Any authenticated user | 200 user |
-| GET | `/api/users` | ADMIN | 200 array of users ordered by id |
+- `POST /auth/register` `{name,email,password}` → 201 `{id,name,email,role}`; always STUDENT.
+- `POST /auth/login` `{email,password}` → 200 same public user. No token/session.
+- `GET /users/me` → authenticated public user.
+- `GET /users` → ADMIN-only public user array.
 
-Registration body:
+Send explicit `Authorization: Basic <base64(email:password)>` for protected requests. Frontend keeps credentials only in memory, uses fetch `credentials: omit`, and clears them on logout/401. Use loopback HTTP for local development or HTTPS for remote deployment. BCrypt passwords are never returned. Registration allows 8–72 printable ASCII characters; login allows 1–72. Names max 100; emails max 254.
 
-```json
-{"name":"Student A","email":"student@campus.edu","password":"StrongPass123!"}
-```
+## Incidents
 
-Login body:
+- `GET /incidents`: permitted records, newest first. STUDENT sees own; ADMIN sees all.
+- `POST /incidents`: JSON or multipart with `incident` application/json part and optional `evidence` file.
+- `GET /incidents/{id}`: permitted report; unauthorized/nonexistent IDs return 404.
+- `GET /incidents/{id}/related`: related records also permitted to the caller.
+- `PUT /incidents/{id}/status`: ADMIN only, `{status:"Pending"|"Investigating"|"Resolved"}`; uppercase accepted. Response status uses uppercase.
+- `GET /incidents/{id}/evidence/{fileId}`: owner/admin-only download, attachment disposition and nosniff.
 
-```json
-{"email":"student@campus.edu","password":"StrongPass123!"}
-```
-
-User response (no password, hash, token, or session):
+Incident request:
 
 ```json
-{"id":1,"name":"Student A","email":"student@campus.edu","role":"STUDENT"}
+{"incidentType":"Phishing","title":"Suspicious scholarship email","description":"A sufficiently detailed incident description.","suspiciousUrl":"https://fakebank.test/login","senderEmail":"sender@example.test","sampleIp":"192.0.2.10","severity":"High","customType":null}
 ```
 
-Registration always assigns STUDENT, regardless of any submitted role field. Name: nonblank, maximum 100 characters. Email: valid, nonblank, maximum 254 characters. Registration password: 8–72 printable ASCII characters; login password: 1–72 printable ASCII characters. The ASCII restriction makes the BCrypt 72-byte limit explicit and prevents silent multibyte truncation.
+The authenticated principal determines the owner; client-supplied user identity is ignored. incidentType is required, max 100. Description: 15–1000. Optional title max 140, URL max 255, sender contact max 254, customType max 100. URL is HTTP(S) only; it is never fetched. sampleIp is optional IPv4. severity is Low/Medium/High. The compatibility field `senderEmail` accepts email or phone contact. Selecting Other in the UI requires customType; the frontend also sends that custom value as incidentType.
 
-Login uses Spring Security AuthenticationManager. A successful login validates credentials only. Send `Authorization: Basic <base64(email:password)>` separately on every protected request. Use only loopback HTTP or HTTPS. Never store credentials in frontend localStorage or sessionStorage; keep them in memory for the local demonstration.
+Response: `{incidentId,incidentType,title,description,suspiciousUrl,domain,senderEmail,sampleIp,status,reportedAt,severity,customType,user:{id,name},evidenceFiles:[{id,filename,contentType}]}`. No user email/hash is disclosed through incident DTOs. Times are UTC. Frontend normalizes entity field names and statuses.
 
-## Errors
+Evidence: PNG/JPEG/PDF, maximum 5 MB, media type and file signature checked. Bytes are stored in MySQL; filenames are sanitized. Reporting, evidence, relationship detection and audit writes share one transaction.
 
-| Status | Condition |
-| --- | --- |
-| 400 | Invalid input or malformed JSON |
-| 401 | Invalid login, missing or invalid Basic credentials |
-| 403 | Authenticated STUDENT requests admin endpoint; disallowed CORS origin |
-| 409 | Email already registered, including differently cased duplicates |
+## Network and relationships
 
-Application validation/authentication errors use:
+- `GET /graph` and `GET /network/graph`: aliases for the same permission-filtered database graph.
+- `GET /relationships`: links with both endpoints visible.
+- `GET /relationships/incident/{id}`: visible links for an accessible report.
+- `GET /network/dns?domain=fakebank.test`: explicit SAMPLE_DNS demonstration; no external DNS requests.
+- `GET /network/ip?address=192.0.2.10` and `/network/ip/count`: caller-visible incident matches/count.
+- `GET /network/tcp?message=hello`: bounded loopback-only TCP client/server demonstration.
 
-```json
-{"status":400,"message":"Validation failed","errors":{"email":"must be a well-formed email address"}}
-```
+Graph shape: `{nodes:[{id,label,type,position:{x,y},data:{kind,label,detail,incident?}}],edges:[{id,source,target,label?,data?}]}`. Kinds: student, incident, domain, url, ip. IDs are namespaced strings. Related incidents share indicator nodes; explicit stored relationship edges carry the matched indicator and score in [0,1]. Every edge endpoint is included in the filtered graph.
 
-Other application errors use an empty `errors` object. Security-filter 401 responses include `WWW-Authenticate: Basic realm="TraceRoute"`. CORS rejections and framework routing errors may use framework error formats. No rejected password values are included in validation responses.
+Sample DNS maps fakebank.test/fakegift.test to 192.0.2.10 and fakecollege.test to 192.0.2.30. User-supplied sampleIp takes precedence. The teammate's relationship algorithm scores shared domains 0.6 and shared IPs 0.4. It does not claim verified attribution.
 
-CORS allows `http://localhost:5173`, explicit Authorization and Content-Type headers, and GET/POST/PUT/PATCH/DELETE/OPTIONS. Browser credential mode is disabled; use `credentials: 'omit'` and an explicit header. Preflight requests do not need Basic authentication.
+## Health and errors
 
-## Reserved teammate 2 endpoints — not implemented
-
-All `/api/incidents/**` and `/api/graph/**` paths require authentication already. Payload validation, ownership enforcement, incident status rules and business errors must be defined by teammate 2. Authentication does not yet imply an incident authorization policy.
-
-| Method | Path | Intended behavior |
-| --- | --- | --- |
-| POST | `/api/incidents` | Report incident; derive user from authenticated principal |
-| GET | `/api/incidents` | List permitted incidents |
-| GET | `/api/incidents/{id}` | Read permitted incident |
-| GET | `/api/graph` | Return graph |
-
-Required graph shape:
-
-```json
-{"nodes":[{"id":1,"label":"Incident 1","type":"incident"}],"edges":[{"source":1,"target":2}]}
-```
-
-The example shows the node/edge field shape; actual edge endpoints must correspond to nodes included in the graph. No placeholder incident or graph controllers are installed.
+`GET /health` is public and returns `{status:"UP",database:"UP"}` only after a SELECT 1 succeeds. Other protected paths require Basic authentication. Error bodies are `{status,message,errors?}`. Common responses: 400 validation, 401 authentication, 403 admin action denied/CORS, 404 inaccessible resource, 409 duplicate registration, 413 oversized evidence. No credentials are logged by application code.

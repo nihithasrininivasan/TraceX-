@@ -45,9 +45,10 @@ public class SecurityConfig {
                 .requestCache(cache -> cache.disable())
                 .authenticationManager(manager)
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users", "/api/users/").hasRole("ADMIN")
-                        .requestMatchers("/api/users/**", "/api/incidents/**", "/api/graph/**").authenticated()
+                        .requestMatchers("/api/users/**", "/api/incidents/**", "/api/graph/**", "/api/network/**", "/api/relationships/**").authenticated()
                         .anyRequest().denyAll())
                 .httpBasic(basic -> basic.authenticationEntryPoint((request, response, exception) -> {
                     response.setHeader("WWW-Authenticate", "Basic realm=\"TraceRoute\"");

@@ -24,7 +24,7 @@ export default function Navbar({ user, onLogout }) {
       <div className="account-tools">
         <span className="environment">
           <i />
-          {demo ? "Demo" : "Campus API"}
+          {demo ? "Demo" : "Campus workspace"}
         </span>
         <span className="avatar" title={user.name}>
           {user.name[0]}

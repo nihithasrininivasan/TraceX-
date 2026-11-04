@@ -23,6 +23,14 @@ function requireArray(data) {
 }
 
 export const incidentService = {
+  async downloadEvidence(incidentId, fileId) {
+    return (
+      await api.get(
+        `/incidents/${encodeURIComponent(incidentId)}/evidence/${encodeURIComponent(fileId)}`,
+        { responseType: "blob" },
+      )
+    ).data;
+  },
   async list() {
     return demo ? read() : requireArray((await api.get("/incidents")).data);
   },

@@ -1,6 +1,6 @@
 -- REFERENCE ONLY. Not on the application classpath and never auto-executed.
 -- Create traceroute_db separately; Hibernate ddl-auto=update owns local schema creation.
--- Only users is currently implemented. Remaining tables are teammate 2's proposed contract.
+-- Integrated entities are implemented; this remains reference documentation, not a migration script.
 CREATE TABLE users (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -14,8 +14,11 @@ CREATE TABLE users (
 
 CREATE TABLE incidents (
     incident_id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT NOT NULL,
+    user_id BIGINT,
     incident_type VARCHAR(100) NOT NULL,
+    title VARCHAR(140),
+    severity VARCHAR(20),
+    custom_type VARCHAR(100),
     description TEXT,
     suspicious_url TEXT,
     domain VARCHAR(253),
@@ -32,6 +35,7 @@ CREATE TABLE evidence (
     incident_id BIGINT NOT NULL,
     evidence_type VARCHAR(100) NOT NULL,
     evidence_value TEXT NOT NULL,
+    content LONGBLOB NOT NULL,
     CONSTRAINT fk_evidence_incident FOREIGN KEY (incident_id) REFERENCES incidents(incident_id)
 );
 
@@ -41,6 +45,9 @@ CREATE TABLE incident_relationships (
     target_incident_id BIGINT NOT NULL,
     relationship_type VARCHAR(100) NOT NULL,
     matching_score DECIMAL(5,4) NOT NULL,
+    verification_status VARCHAR(255),
+    matched_indicator VARCHAR(255),
+    created_at DATETIME(6),
     CONSTRAINT fk_relationship_source FOREIGN KEY (source_incident_id) REFERENCES incidents(incident_id),
     CONSTRAINT fk_relationship_target FOREIGN KEY (target_incident_id) REFERENCES incidents(incident_id),
     CONSTRAINT ck_matching_score CHECK (matching_score BETWEEN 0 AND 1)

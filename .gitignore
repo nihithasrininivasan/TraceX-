@@ -49,6 +49,7 @@ Desktop.ini
 
 # =========================
 # TEMPORARY FILES
+.runtime/
 # =========================
 *.tmp
 *.bak

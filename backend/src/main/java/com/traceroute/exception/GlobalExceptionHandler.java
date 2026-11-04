@@ -9,6 +9,14 @@ import java.util.TreeMap;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    ResponseEntity<ApiError> status(org.springframework.web.server.ResponseStatusException exception) {
+        return ResponseEntity.status(exception.getStatusCode()).body(new ApiError(exception.getStatusCode().value(), exception.getReason()));
+    }
+    @ExceptionHandler(IllegalArgumentException.class)
+    ResponseEntity<ApiError> invalid(IllegalArgumentException exception) { return ResponseEntity.badRequest().body(new ApiError(400, exception.getMessage())); }
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    ResponseEntity<ApiError> uploadTooLarge() { return ResponseEntity.status(413).body(new ApiError(413,"Evidence must be at most 5 MB")); }
     @ExceptionHandler(DuplicateEmailException.class)
     ResponseEntity<ApiError> duplicate(DuplicateEmailException exception) {
         return ResponseEntity.status(409).body(new ApiError(409, exception.getMessage()));

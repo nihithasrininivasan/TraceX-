@@ -43,6 +43,19 @@ function Details({ user, refresh }) {
       setBusy(false);
     }
   }
+  async function download(file) {
+    try {
+      const blob = await service.downloadEvidence(id, file.id);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = file.filename;
+      anchor.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch {
+      setError("Evidence could not be downloaded. Please try again.");
+    }
+  }
   if (!item) return <p>{error || "Loading incident…"}</p>;
   return (
     <>
@@ -92,10 +105,21 @@ function Details({ user, refresh }) {
               </div>
             ))}
           <h2>Evidence</h2>
+          {item.evidenceFiles?.map((file) => (
+            <button
+              className="button secondary"
+              key={file.id}
+              onClick={() => download(file)}
+            >
+              Download {file.filename}
+            </button>
+          ))}
           <p className="muted">
             {item.evidence
               ? `${item.evidence} — ${demo ? "filename retained in demo; file upload requires the backend" : "submitted attachment"}`
-              : "No evidence attached."}
+              : item.evidenceFiles?.length
+                ? ""
+                : "No evidence attached."}
           </p>
         </section>
         <section className="panel detail">

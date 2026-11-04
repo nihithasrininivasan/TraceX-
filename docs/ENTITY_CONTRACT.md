@@ -42,4 +42,12 @@ public class Incident {
 
 Package: `com.traceroute.entity`; imports: jakarta.persistence annotations and java.time.LocalDateTime. Add explicit `@Column` mappings and lengths matching the reference schema, plus constructors/accessors and lifecycle/validation rules. Spring's naming strategy maps camelCase to snake_case. Reference `users.id` for `user_id`. Prefer DTOs to serializing entity graphs, and ensure only authorized users can access incidents. Use UTC consistently. Incident types, evidence types, statuses, relationship types, matching-score scale and audit ownership are decisions to finalize with teammate 2; the reference proposes DECIMAL(5,4) scores in [0,1].
 
-Teammate 3 owns the frontend. No React files or UI are implemented here.
+## Integrated implementation
+
+The incident entities remain in `com.traceroute.incident.entity`, preserving teammate 2's module organization under the root application's component scan. Incident now references User through user_id. New reports always have an authenticated owner; legacy ownerless reports are admin-only. Optional title, severity and customType fields preserve frontend data. UTC is used for reportedAt and relationship/audit creation.
+
+Evidence maps evidence_id, incident_id, evidence_type (media type), evidence_value (sanitized filename) and content (LONGBLOB). Bytes are retrieved only through owner/admin-authorized endpoints, not serialized in incident responses. AuditLog records actor user_id, action and UTC created_at for report creation and status changes.
+
+Relationships retain source/target incident IDs with database foreign-key associations and store the normalized score in matching_score DECIMAL(5,4). The original matching weights are retained as 0.6 domain + 0.4 IP. Verification status, matched indicator and UTC creation time are preserved. Do not apply the reference SQL over an existing populated schema; inspect and migrate legacy match_score/ownership data explicitly if importing an earlier standalone deployment.
+
+Teammate 3's complete React UI is under frontend/. See API_CONTRACT.md for the implemented DTOs, permissions and evidence format.

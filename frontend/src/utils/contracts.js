@@ -27,6 +27,7 @@ export function normalizeIncident(value) {
       value.status ||
       "Pending",
     severity: value.severity || "Unspecified",
+    evidenceFiles: value.evidenceFiles || [],
   };
 }
 

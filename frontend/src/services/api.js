@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export const demo = import.meta.env.VITE_API_MODE !== "live";
+export const demo = import.meta.env.VITE_API_MODE === "demo";
 let basicCredentials = null;
 export function setCredentials(email, password) {
   basicCredentials = btoa(

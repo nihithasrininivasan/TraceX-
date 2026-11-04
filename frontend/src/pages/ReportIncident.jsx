@@ -69,6 +69,7 @@ function Report({ user, refresh }) {
             Incident type
             <select
               name="type"
+              aria-label="Incident type"
               value={type}
               onChange={(event) => setType(event.target.value)}
             >
@@ -86,7 +87,7 @@ function Report({ user, refresh }) {
           </label>
           <label className="field">
             Severity
-            <select name="severity">
+            <select name="severity" aria-label="Severity">
               {["Low", "Medium", "High"].map((x) => (
                 <option key={x}>{x}</option>
               ))}
@@ -111,19 +112,26 @@ function Report({ user, refresh }) {
             required
             minLength={15}
             rows={5}
+            maxLength={1000}
             placeholder="What did you notice? When and where did it happen?"
           />
         </label>
         <div className="form-row">
           <label className="field">
             Suspicious URL <small>optional</small>
-            <input type="url" name="url" placeholder="https://example.com" />
+            <input
+              type="url"
+              name="url"
+              maxLength={255}
+              placeholder="https://example.com"
+            />
           </label>
           <label className="field">
             Sender email or phone number <small>optional</small>
             <input
               type="text"
               name="sender"
+              maxLength={254}
               placeholder="sender@example.com or +91 98765 43210"
             />
           </label>
