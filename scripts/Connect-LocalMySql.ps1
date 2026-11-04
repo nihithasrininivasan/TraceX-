@@ -1,4 +1,4 @@
-param([string]$TestAdminEmail, [switch]$RestartBackend)
+param([string]$TestAdminEmail, [switch]$RestartBackend, [switch]$ReadOnlyCheck, [switch]$FinalVerification)
 # Collect the existing MySQL login locally. Never writes credentials to a file.
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
@@ -35,6 +35,8 @@ $note.Size = New-Object System.Drawing.Size(380, 38)
 $form.Controls.Add($note)
 $connect = New-Object System.Windows.Forms.Button
 $connect.Text = 'Connect and start TraceX'
+if ($ReadOnlyCheck) { $form.Text = 'TraceX - read-only database check'; $connect.Text = 'Check database'; $note.Text = 'Read-only checks on local MySQL. No records or services will be changed.' }
+if ($FinalVerification) { $form.Text = 'TraceX - final verification'; $connect.Text = 'Run verification'; $note.Text = 'Reads your existing database, then tests APIs in a separate verification database. Existing accounts/reports stay unchanged.' }
 $connect.Size = New-Object System.Drawing.Size(190, 30)
 $connect.Location = New-Object System.Drawing.Point(205, 200)
 $connect.DialogResult = [System.Windows.Forms.DialogResult]::OK
@@ -50,6 +52,37 @@ New-Item -ItemType Directory -Path $runtime -Force | Out-Null
 try {
     $env:MYSQL_PWD = $fields['Password'].Text
     $fields['Password'].Clear()
+    if ($FinalVerification) {
+        $env:TRACEX_VERIFY_DB_USER=$dbUser
+        $env:TRACEX_VERIFY_SOURCE_DB=$dbName
+        & python (Join-Path $PSScriptRoot 'final_verification.py')
+        exit $LASTEXITCODE
+    }
+    if ($ReadOnlyCheck) {
+        $inspection = @'
+START TRANSACTION READ ONLY;
+SELECT DATABASE() AS database_name, VERSION() AS mysql_version;
+SHOW TABLES;
+SELECT 'users' AS table_name, COUNT(*) AS row_count FROM users
+UNION ALL SELECT 'incidents', COUNT(*) FROM incidents
+UNION ALL SELECT 'incident_relationships', COUNT(*) FROM incident_relationships
+UNION ALL SELECT 'evidence', COUNT(*) FROM evidence
+UNION ALL SELECT 'audit_logs', COUNT(*) FROM audit_logs;
+SELECT status, COUNT(*) AS incident_count FROM incidents GROUP BY status;
+SELECT incident_id, incident_type, status, domain, reported_at FROM incidents ORDER BY incident_id DESC LIMIT 10;
+SELECT 'incidents_with_missing_user' AS integrity_check, COUNT(*) AS problem_count FROM incidents i LEFT JOIN users u ON i.user_id=u.id WHERE i.user_id IS NOT NULL AND u.id IS NULL
+UNION ALL SELECT 'evidence_with_missing_incident', COUNT(*) FROM evidence e LEFT JOIN incidents i ON e.incident_id=i.incident_id WHERE i.incident_id IS NULL
+UNION ALL SELECT 'relationships_with_missing_incident', COUNT(*) FROM incident_relationships r LEFT JOIN incidents a ON r.source_incident_id=a.incident_id LEFT JOIN incidents b ON r.target_incident_id=b.incident_id WHERE a.incident_id IS NULL OR b.incident_id IS NULL
+UNION ALL SELECT 'invalid_relationship_score', COUNT(*) FROM incident_relationships WHERE matching_score < 0 OR matching_score > 1 OR matching_score IS NULL
+UNION ALL SELECT 'empty_evidence_content', COUNT(*) FROM evidence WHERE content IS NULL OR OCTET_LENGTH(content)=0
+UNION ALL SELECT 'unexpected_password_hash_format', COUNT(*) FROM users WHERE LEFT(password_hash,4) NOT IN ('$2a$','$2b$','$2y$') OR CHAR_LENGTH(password_hash)<>60;
+SELECT source_incident_id, target_incident_id, relationship_type, matching_score FROM incident_relationships ORDER BY relationship_id DESC LIMIT 10;
+COMMIT;
+'@
+        $inspection | & 'C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe' --host=127.0.0.1 --port=3306 --user=$dbUser --database=$dbName --connect-timeout=5 --table
+        if ($LASTEXITCODE -ne 0) { throw 'The read-only database check failed.' }
+        exit 0
+    }
     & 'C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe' --host=127.0.0.1 --port=3306 --user=$dbUser --connect-timeout=5 -e "CREATE DATABASE IF NOT EXISTS $dbName CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; SELECT 1 AS connection_ok;"
     if ($LASTEXITCODE -ne 0) { throw 'MySQL connection failed. Verify the username, password and database privileges.' }
     if ($TestAdminEmail) {

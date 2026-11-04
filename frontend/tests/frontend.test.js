@@ -4,6 +4,20 @@ import { makeGraph } from "../src/utils/graph.js";
 import { validateReport } from "../src/utils/validation.js";
 import { seed, isRelated } from "../src/data.js";
 import { normalizeIncident, normalizeGraph } from "../src/utils/contracts.js";
+test("graph adapter preserves normalized scores without percentage conversion", () => {
+  for (const score of [0.4, 0.6, 1.0]) {
+    const graph = normalizeGraph({
+      nodes: [
+        { id: 1, type: "incident" },
+        { id: 2, type: "incident" },
+      ],
+      edges: [
+        { id: "match", source: 1, target: 2, data: { matchScore: score } },
+      ],
+    });
+    assert.equal(graph.edges[0].data.matchScore, score);
+  }
+});
 
 test("backend entity fields map to the frontend incident", () => {
   const incident = normalizeIncident({

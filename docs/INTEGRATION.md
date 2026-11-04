@@ -2,7 +2,7 @@
 
 ## Resumed verification — 4 November 2026
 
-The final backend package and all 20 backend tests pass; all 9 frontend tests and the production build pass. The frontend was restarted at http://localhost:5173/. MySQL80 is running, but the supplied local login was rejected, so the backend could not be restarted. The 20 real-MySQL smoke checks and browser results below describe the successful session on 3 November; they have not been rerun today. Password recovery has no recorded successful completion. Use the correct local login or complete recovery before claiming current end-to-end availability. No credentials or runtime files are committed.
+The initial login retry on 4 November was rejected; a later retry succeeded and restored the backend's MySQL connection. A subsequent final pass completed 23 backend tests, 10 frontend tests and 63 real-MySQL/API checks, with zero failures. The main database's constraints and records were inspected read-only; API fixtures used a separate verification database. See [FINAL_VERIFICATION.md](FINAL_VERIFICATION.md) for current results and endpoint coverage. Password recovery was not needed. No credentials or runtime files are committed.
 
 Dedicated branch: `codex/integrate-tracex`. Source modules: foundation b581198, frontend 985b1fd, incident/networking a1c31af. The incident branch has unrelated history and a standalone Boot 4 layout; its Java modules were imported into the existing backend without importing duplicate entry points, root Maven/config files, or changing the Boot 3.5.16/Java 21 foundation. Teammate branches/main were not overwritten.
 
