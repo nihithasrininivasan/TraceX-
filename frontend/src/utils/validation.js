@@ -1,4 +1,29 @@
+// Keep these rules aligned with backend ContactFormats.
+const emailFormat =
+  /^[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}$/;
+export function isValidEmail(value) {
+  return (
+    typeof value === "string" &&
+    value.length <= 254 &&
+    value.indexOf("@") <= 64 &&
+    emailFormat.test(value)
+  );
+}
+export function isValidSender(value) {
+  const text = (value || "").trim();
+  if (!text || isValidEmail(text)) return true;
+  if (!/^\+?[0-9]+(?:[ -]?(?:[0-9]+|\([0-9]{2,5}\)))*$/.test(text))
+    return false;
+  const digits = text.replace(/[^0-9]/g, "");
+  if (digits.startsWith("0")) return false;
+  return text.startsWith("+")
+    ? digits.length >= 8 && digits.length <= 15
+    : digits.length === 10;
+}
+
 export function validateReport(body) {
+  if (!isValidSender(body.sender))
+    return "Enter a valid sender email or phone number: 10 digits, or + country code and 8–15 digits.";
   if (body.type === "Other" && !body.customType?.trim())
     return "Please specify the incident type.";
   if (!body.title?.trim()) return "Enter a short incident title.";

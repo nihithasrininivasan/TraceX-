@@ -13,6 +13,8 @@ Send explicit `Authorization: Basic <base64(email:password)>` for protected requ
 
 ## Incidents
 
+Contact validation is enforced in the UI and API. Account and sender emails require a dotted domain with a 2–63 letter suffix, valid domain labels, and a local part of at most 64 characters (no leading, trailing, or consecutive dots); the full address is at most 254 characters. Sender contact is optional and surrounding whitespace is trimmed. Phone contacts require 10 digits without a country code, or 8–15 digits with a leading `+` country code; the first digit must be nonzero. Spaces, hyphens, and balanced 2–5 digit area-code parentheses after the initial digit group are allowed. Letters, extensions, repeated separators, and embedded control characters are rejected. These checks validate format, not ownership or deliverability. Both JSON and multipart incident requests reject invalid contacts with HTTP 400.
+
 - `GET /incidents`: permitted records, newest first. STUDENT sees own; ADMIN sees all.
 - `POST /incidents`: JSON or multipart with `incident` application/json part and optional `evidence` file.
 - `GET /incidents/{id}`: permitted report; unauthorized/nonexistent IDs return 404.

@@ -15,6 +15,7 @@ function Report({ user, refresh }) {
     setBusy(true);
     setError("");
     const body = Object.fromEntries(new FormData(e.currentTarget));
+    body.sender = body.sender.trim();
     if (body.customType) body.customType = body.customType.trim();
     const validation = validateReport({ ...body, evidence: file });
     if (validation) {
@@ -30,9 +31,12 @@ function Report({ user, refresh }) {
       });
       await refresh();
       nav("/incidents/" + x.id);
-    } catch {
+    } catch (exception) {
+      const response = exception.response?.data;
       setError(
-        "Report could not be submitted. Please check your connection and try again.",
+        (response?.errors && Object.values(response.errors).join(" ")) ||
+          response?.message ||
+          "Report could not be submitted. Please check your connection and try again.",
       );
     } finally {
       setBusy(false);
@@ -133,7 +137,12 @@ function Report({ user, refresh }) {
               name="sender"
               maxLength={254}
               placeholder="sender@example.com or +91 98765 43210"
+              aria-describedby="sender-format"
             />
+            <small id="sender-format">
+              Use a complete email, 10-digit phone number, or + country code and
+              8–15 digits.
+            </small>
           </label>
         </div>
         <label className="field">
@@ -165,7 +174,11 @@ function Report({ user, refresh }) {
             }}
           />
         </label>
-        {error && <p className="notice">{error}</p>}
+        {error && (
+          <p className="notice" role="alert">
+            {error}
+          </p>
+        )}
         <div className="form-actions">
           <span>
             {demo

@@ -3,6 +3,8 @@ package com.traceroute.incident.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.AssertTrue;
+import com.traceroute.validation.ContactFormats;
 
 public class IncidentRequest {
 
@@ -19,6 +21,9 @@ public class IncidentRequest {
 
     @Size(max = 254)
     private String senderEmail;
+
+    @AssertTrue(message = "Enter a valid sender email or phone number (10 digits, or + country code and 8–15 digits)")
+    public boolean isSenderFormatValid() { return ContactFormats.sender(senderEmail); }
 
     @Size(max = 140) private String title;
     @Size(max = 20) private String severity;
@@ -64,6 +69,6 @@ public class IncidentRequest {
     }
 
     public void setSenderEmail(String senderEmail) {
-        this.senderEmail = senderEmail;
+        this.senderEmail = senderEmail == null ? null : senderEmail.strip();
     }
 }

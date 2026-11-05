@@ -29,6 +29,18 @@ class IncidentIntegrationTest {
     @Autowired org.springframework.jdbc.core.JdbcTemplate jdbc;
     @Autowired com.traceroute.incident.service.RelationshipService relationshipService;
     static final String PASSWORD="IntegrationTest123!";
+    @Test void malformedSendersAreRejectedForJsonAndMultipartBeforeStorage() throws Exception {
+        var request = json.readTree(body("Invalid sender"));
+        ((com.fasterxml.jackson.databind.node.ObjectNode) request).put("senderEmail", "not-an-email");
+        String payload = json.writeValueAsString(request);
+        mvc.perform(post("/api/incidents").with(httpBasic("a@campus.test",PASSWORD))
+            .contentType(MediaType.APPLICATION_JSON).content(payload)).andExpect(status().isBadRequest());
+        var part = new MockMultipartFile("incident", "", "application/json", payload.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        mvc.perform(multipart("/api/incidents").file(part).with(httpBasic("a@campus.test",PASSWORD)))
+            .andExpect(status().isBadRequest());
+        assertThat(incidents.count()).isZero();
+        assertThat(audits.count()).isZero();
+    }
     @BeforeEach void prepare() {
         evidence.deleteAll(); relationships.deleteAll(); audits.deleteAll(); incidents.deleteAll(); users.deleteAll();
         users.save(new User("Student A","a@campus.test",encoder.encode(PASSWORD),Role.STUDENT));

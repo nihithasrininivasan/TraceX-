@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FileText, ArrowRight, Globe, User, X } from "lucide-react";
 import { service, demo } from "../services";
+import { isValidEmail } from "../utils/validation";
 function Auth({ enter, register = false }) {
   const nav = useNavigate();
   const [err, setErr] = useState(""),
@@ -13,6 +14,8 @@ function Auth({ enter, register = false }) {
     try {
       const body = Object.fromEntries(new FormData(e.currentTarget));
       body.email = body.email.trim();
+      if (!isValidEmail(body.email))
+        throw new Error("Enter a complete email address, e.g. you@campus.edu.");
       if (register) {
         if (body.password !== body.confirmPassword)
           throw new Error("Passwords do not match.");
@@ -24,7 +27,12 @@ function Auth({ enter, register = false }) {
         enter(r.user);
       }
     } catch (e) {
-      setErr(e.response?.data?.message || e.message);
+      const response = e.response?.data;
+      setErr(
+        (response?.errors && Object.values(response.errors).join(" ")) ||
+          response?.message ||
+          e.message,
+      );
     } finally {
       setBusy(false);
     }
